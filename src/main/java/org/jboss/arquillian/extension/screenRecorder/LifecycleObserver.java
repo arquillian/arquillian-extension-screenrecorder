@@ -35,9 +35,6 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
  */
 public class LifecycleObserver {
 
-    private static final int TEST_TIMEOUT = 100;
-    @Inject
-    private Instance<ArquillianDescriptor> descriptor;
     
     private RecorderConfiguration configuration;
     private ScreenRecorder recorder;
@@ -46,9 +43,9 @@ public class LifecycleObserver {
     private boolean shouldTakeScreenshots;
     private boolean shouldRecordVideo;
 
-    public void initConfiguration(@Observes BeforeSuite event) throws IOException {
+    public void initConfiguration(@Observes ArquillianDescriptor descriptor) throws IOException {
         configuration = new RecorderConfiguration();
-        for (ExtensionDef extension : descriptor.get().getExtensions()) {
+        for (ExtensionDef extension : descriptor.getExtensions()) {
             if (extension.getExtensionName().equalsIgnoreCase(SystemProperties.SCREEN_RECORDER)) {
                 configuration.setProperties(extension.getExtensionProperties());
             }
