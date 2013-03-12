@@ -13,20 +13,19 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.lang.reflect.Method;
 
 import javax.imageio.ImageIO;
-
 import org.apache.commons.io.FileUtils;
-
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ExtensionDef;
-
 import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
 import org.jboss.arquillian.container.spi.event.container.AfterUnDeploy;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.TestResult;
+import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 
@@ -61,19 +60,19 @@ public class LifecycleObserver {
         shouldTakeScreenshots = configuration.shouldTakeScreenshots();
         shouldTakeScreenshotsOnlyOnFail = configuration.shouldTakeScreenshotsOnlyOnFail();
 
-        FileUtils.deleteDirectory(new File(configuration.getRootFolder()));
+        FileUtils.deleteDirectory(configuration.getRootFolder());
 
         if (shouldRecordVideo) {
-            new File(configuration.getVideoFolder()).mkdirs();
+            configuration.getVideoFolder().mkdirs();
         }
         if (shouldTakeScreenshots || shouldTakeScreenshotsOnlyOnFail) {
-            new File(configuration.getScreenshotFolder()).mkdirs();
-        }
+            configuration.getScreenshotFolder().mkdirs();
+		}
     }
 
     public void executeBeforeStart(@Observes AfterDeploy event) {
         if (!recordEachTestSeparately && shouldRecordVideo) {
-            startRecording(configuration.getVideoName());
+            startRecording(configuration.getVideoFolder(), configuration.getVideoName());
         }
     }
 
@@ -87,10 +86,11 @@ public class LifecycleObserver {
         timer = new Timer();
         timer.schedule(new TestTimeoutTask(), 1000 * configuration.getTestTimeout());
         if (recordEachTestSeparately) {
-            startRecording(event.getTestMethod().getName());
+            File testClassDirectory = prepareDirectory(configuration.getVideoFolder(), event.getTestClass());
+            startRecording(testClassDirectory, event.getTestMethod().getName());
         }
         if (shouldTakeScreenshots && !shouldTakeScreenshotsOnlyOnFail) {
-            takeScreenshot(event.getTestMethod().getName(), "before");
+            takeScreenshot(event.getTestClass(), event.getTestMethod(), "before");
         }
     }
 
@@ -100,27 +100,36 @@ public class LifecycleObserver {
             recorder.stopRecording();
         }
         if (shouldTakeScreenshots) {
-            takeScreenshot(event.getTestMethod().getName(), "after");
+            takeScreenshot(event.getTestClass(), event.getTestMethod(), "after");
         } else if(shouldTakeScreenshotsOnlyOnFail) {
             if(testResult.get().getStatus() == TestResult.Status.FAILED){
-                takeScreenshot(event.getTestMethod().getName(), "fail");
+                takeScreenshot(event.getTestClass(), event.getTestMethod(), "fail");
             }
         }
     }
 
-    private void startRecording(String fileName) {
+    protected File prepareDirectory(File root, TestClass clazz) {
+        String packageName = clazz.getJavaClass().getPackage().getName();
+        String className = clazz.getJavaClass().getSimpleName();
+        File directory = FileUtils.getFile(root, packageName, className);
+        directory.mkdirs();
+        return directory;
+    }
+
+    private void startRecording(File directory, String fileName) {
         String videoName = fileName + "." + configuration.getVideoFileType();
-        File video = FileUtils.getFile(configuration.getVideoFolder(), videoName);
+        File video = FileUtils.getFile(directory, videoName);
         recorder = new ScreenRecorder(video, configuration.getFrameRate());
         recorder.startRecording();
     }
 
-    private void takeScreenshot(String testName, String appender) throws AWTException, IOException {
+    private void takeScreenshot(TestClass testClass, Method testMethod, String appender) throws AWTException, IOException {
         Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
         BufferedImage image = new Robot().createScreenCapture(screenSize);
 
-        String imageName = testName + "_" + appender + "." + configuration.getImageFileType();
-        File outputFile = FileUtils.getFile(configuration.getScreenshotFolder(), imageName);
+        String imageName = testMethod.getName() + "_" + appender + "." + configuration.getImageFileType();
+        File testClassDirectory = prepareDirectory(configuration.getScreenshotFolder(), testClass);
+        File outputFile = FileUtils.getFile(testClassDirectory, imageName);
         ImageIO.write(image, configuration.getImageFileType().toString(), outputFile);
     }
     

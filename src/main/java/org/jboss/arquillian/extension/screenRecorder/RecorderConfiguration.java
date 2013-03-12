@@ -4,6 +4,7 @@
  */
 package org.jboss.arquillian.extension.screenRecorder;
 
+import java.io.File;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 
@@ -29,40 +30,40 @@ public class RecorderConfiguration {
     
     private Map<String, String> properties;
 
-    public String getVideoFolder() {
-        String folder = isPropertyExists(SystemProperties.VIDEO_FOLDER) ? 
+    public File getVideoFolder() {
+        String folder = isPropertyExists(SystemProperties.VIDEO_FOLDER) ?
                 properties.get(SystemProperties.VIDEO_FOLDER) : DEFAULT_VIDEO_FOLDER;
-        return FileUtils.getFile(getRootFolder(), folder).getAbsolutePath();
+        return FileUtils.getFile(getRootFolder(), folder);
     }
-    
-    public String getScreenshotFolder() {
-        String folder = isPropertyExists(SystemProperties.SCREENSHOT_FOLDER) ? 
+
+    public File getScreenshotFolder() {
+        String folder = isPropertyExists(SystemProperties.SCREENSHOT_FOLDER) ?
                 properties.get(SystemProperties.SCREENSHOT_FOLDER) : DEFAULT_SCREENSHOT_FOLDER;
-        return FileUtils.getFile(getRootFolder(), folder).getAbsolutePath();
+        return FileUtils.getFile(getRootFolder(), folder);
     }
-    
-    public String getRootFolder() {
-        return isPropertyExists(SystemProperties.MEDIA_ROOT) ? 
-                properties.get(SystemProperties.MEDIA_ROOT) : DEFAULT_ROOT_FOLDER;
+
+    public File getRootFolder() {
+        return new File(isPropertyExists(SystemProperties.MEDIA_ROOT) ?
+                properties.get(SystemProperties.MEDIA_ROOT) : DEFAULT_ROOT_FOLDER);
     }
-    
+
     public String getVideoName() {
-        return isPropertyExists(SystemProperties.VIDEO_NAME) ? 
+        return isPropertyExists(SystemProperties.VIDEO_NAME) ?
                 properties.get(SystemProperties.VIDEO_NAME) : DEFAULT_VIDEO_NAME;
     }
-    
+
     public ImageType getImageFileType() {
-        return isPropertyExists(SystemProperties.IMAGE_FILE_TYPE) ? 
+        return isPropertyExists(SystemProperties.IMAGE_FILE_TYPE) ?
                 ImageType.valueOf(properties.get(SystemProperties.IMAGE_FILE_TYPE)) : DEFAULT_IMAGE_FILE_TYPE;
     }
-    
+
     public boolean isEachTestRecordedSeparately() {
-        return isPropertyExists(SystemProperties.RECORD_TESTS_SEPARATELY) ? 
+        return isPropertyExists(SystemProperties.RECORD_TESTS_SEPARATELY) ?
                 Boolean.parseBoolean(properties.get(SystemProperties.RECORD_TESTS_SEPARATELY)) : DEFAULT_RECORD_TESTS_SEPARATELY;
     }
-    
+
     public boolean shouldTakeScreenshots() {
-        return isPropertyExists(SystemProperties.SHOULD_TAKE_SCREENSHOTS) ? 
+        return isPropertyExists(SystemProperties.SHOULD_TAKE_SCREENSHOTS) ?
                 Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_TAKE_SCREENSHOTS)) : DEFAULT_SHOULD_TAKE_SCREENSHOTS;
     }
     
@@ -72,24 +73,24 @@ public class RecorderConfiguration {
     }
     
     public boolean shouldRecordVideo() {
-        return isPropertyExists(SystemProperties.SHOULD_RECORD_VIDEO) ? 
+        return isPropertyExists(SystemProperties.SHOULD_RECORD_VIDEO) ?
                 Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_RECORD_VIDEO)) : DEFAULT_SHOULD_RECORD_VIDEO;
     }
-    
+
     public int getFrameRate() {
-        return isPropertyExists(SystemProperties.FRAME_RATE) ? 
+        return isPropertyExists(SystemProperties.FRAME_RATE) ?
                 Integer.parseInt(properties.get(SystemProperties.FRAME_RATE)) : DEFAULT_FRAME_RATE;
     }
-    
+
     public int getTestTimeout() {
-        return isPropertyExists(SystemProperties.TEST_TIMEOUT) ? 
+        return isPropertyExists(SystemProperties.TEST_TIMEOUT) ?
                 Integer.parseInt(properties.get(SystemProperties.TEST_TIMEOUT)) : DEFAULT_TEST_TIMEOUT;
     }
-    
+
     public String getVideoFileType() {
         return DEFAULT_VIDEO_FILE_TYPE;
     }
-    
+
     private boolean isPropertyExists(String property) {
         if(properties == null) {
             return false;
@@ -99,10 +100,10 @@ public class RecorderConfiguration {
             return true;
         }
     }
-    
+
     public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
 
-    
+
 }
