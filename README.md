@@ -7,8 +7,8 @@ Maven dependency
 ----------------
 
     <groupId>org.jboss.arquillian.extension</groupId>
-    <artifactId>arquillian-screen-recorder<artifactId>
-    <version>1.0</version>
+    <artifactId>arquillian-screen-recorder</artifactId>
+    <version>1.0.0.Alpha1-SNAPSHOT</version>
 
 Settings
 --------
@@ -21,12 +21,23 @@ There are various settings which can be used to alter Screen Recorder behaviour.
         <property name="rootFolder">target</property>
         <property name="videoFolder">video</property>
         <property name="videoName">myTestVideo</property>
-        <property name="shouldTakeScreenshots>false</property>
-    </extension>`
+        <property name="shouldTakeScreenshots">false</property>
+    </extension>
 
 ### List of settings
 
-Also see the class [SystemProperties](https://github.com/pmensik/screenRecorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/SystemProperties.java) which contains a list of properties and the [RecorderConfiguration](https://github.com/pmensik/screenRecorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/RecorderConfiguration.java) which contains their defaults.
+* **rootFolder** - folder which will contain all screenshots and videos, defaults to *target/media*
+* **videoFolder** - name of the folder which contains video record(s), it is placed inside root folder. Defaults to video
+* **screenshotFolder** - same as videoFolder, defaults to screenshot
+* **videoName** - this will be video name (in case you are recording one video for all tests), defaults to record
+* **imageFileType** - filetype of produced screenshots, allowed types are PNG, JPG and GIF. Default is PNG
+* **recordEachTestSeparately** - this flag specifies if Screen Recorder should take one video for each test or record everything to one file
+* **shouldTakeScreenshots** - no screenshots will be made if this flag is false (default is true)
+* **shouldRecordVideo** - use this to turn video recording off (default is true)
+* **frameRate** - you can adjust frame rate of video by this property. One frame is 1000 / frameRate property. Default is 20, so test video is recorded in 50 frames per second.
+
+
+Also see the class [SystemProperties](https://github.com/qa/arquillian-screen-recorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/SystemProperties.java) which contains a list of properties and the [RecorderConfiguration](https://github.com/qa/arquillian-screen-recorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/RecorderConfiguration.java) which contains their defaults.
 
  
 Notes
