@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jboss.arquillian.extension;
+package org.jboss.arquillian.extension.screenRecorder;
 
 import java.awt.AWTException;
 import java.awt.Rectangle;
