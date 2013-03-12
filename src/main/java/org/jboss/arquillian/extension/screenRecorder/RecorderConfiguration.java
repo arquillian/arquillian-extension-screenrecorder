@@ -18,7 +18,7 @@ public class RecorderConfiguration {
     private static final String DEFAULT_VIDEO_FOLDER = "video";
     private static final String DEFAULT_SCREENSHOT_FOLDER = "screenshot";
     private static final String DEFAULT_VIDEO_NAME = "record";
-    private static final String DEFAULT_IMAGE_FILE_TYPE = "png";
+    private static final ImageType DEFAULT_IMAGE_FILE_TYPE = ImageType.PNG;
     private static final String DEFAULT_VIDEO_FILE_TYPE = "mp4";
     private static final boolean DEFAULT_RECORD_TESTS_SEPARATELY = false;
     private static final boolean DEFAULT_SHOULD_TAKE_SCREENSHOTS = true;
@@ -50,9 +50,9 @@ public class RecorderConfiguration {
                 properties.get(SystemProperties.VIDEO_NAME) : DEFAULT_VIDEO_NAME;
     }
     
-    public String getImageFileType() {
+    public ImageType getImageFileType() {
         return isPropertyExists(SystemProperties.IMAGE_FILE_TYPE) ? 
-                properties.get(SystemProperties.IMAGE_FILE_TYPE) : DEFAULT_IMAGE_FILE_TYPE;
+                ImageType.valueOf(properties.get(SystemProperties.IMAGE_FILE_TYPE)) : DEFAULT_IMAGE_FILE_TYPE;
     }
     
     public boolean isEachTestRecordedSeparately() {

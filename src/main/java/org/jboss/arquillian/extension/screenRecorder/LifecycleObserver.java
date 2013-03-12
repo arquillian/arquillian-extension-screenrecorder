@@ -108,6 +108,6 @@ public class LifecycleObserver {
 
         String imageName = testName + "_" + when + "." + configuration.getImageFileType();
         File outputFile = FileUtils.getFile(configuration.getScreenshotFolder(), imageName);
-        ImageIO.write(image, configuration.getImageFileType(), outputFile);
+        ImageIO.write(image, configuration.getImageFileType().toString(), outputFile);
     }
 }
