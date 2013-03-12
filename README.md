@@ -7,7 +7,7 @@ Maven dependency
 ----------------
 
     <groupId>org.jboss.arquillian.extension</groupId>
-    <artifactId>arquillian-screen-recorder<artifactId>
+    <artifactId>arquillian-screen-recorder</artifactId>
     <version>1.0</version>
 
 Settings
@@ -21,7 +21,7 @@ There are various settings which can be used to alter Screen Recorder behaviour.
         <property name="rootFolder">target</property>
         <property name="videoFolder">video</property>
         <property name="videoName">myTestVideo</property>
-        <property name="shouldTakeScreenshots>false</property>
+        <property name="shouldTakeScreenshots">false</property>
     </extension>`
 
 ### List of settings
