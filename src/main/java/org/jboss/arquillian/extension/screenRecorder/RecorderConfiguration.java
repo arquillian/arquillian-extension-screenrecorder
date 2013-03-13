@@ -21,10 +21,11 @@ public class RecorderConfiguration {
     private static final ImageType DEFAULT_IMAGE_FILE_TYPE = ImageType.PNG;
     private static final String DEFAULT_VIDEO_FILE_TYPE = "mp4";
     private static final boolean DEFAULT_RECORD_TESTS_SEPARATELY = false;
-    private static final boolean DEFAULT_SHOULD_TAKE_SCREENSHOTS = true;
+    private static final boolean DEFAULT_SHOULD_TAKE_SCREENSHOTS = false;
     private static final boolean DEFAULT_SHOULD_RECORD_VIDEO = true;
+    private static final boolean DEFAULT_TAKE_SCREENSHOTS_ONLY_ON_FAIL = true;
     private static final int DEFAULT_FRAME_RATE = 20;
-    private static final int DEFAULT_TEST_TIMEOUT = 100;
+    private static final int DEFAULT_TEST_TIMEOUT = 3600; //one hour
     
     private Map<String, String> properties;
 
@@ -63,6 +64,11 @@ public class RecorderConfiguration {
     public boolean shouldTakeScreenshots() {
         return isPropertyExists(SystemProperties.SHOULD_TAKE_SCREENSHOTS) ? 
                 Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_TAKE_SCREENSHOTS)) : DEFAULT_SHOULD_TAKE_SCREENSHOTS;
+    }
+    
+    public boolean shouldTakeScreenshotsOnlyOnFail() {
+        return isPropertyExists(SystemProperties.SHOULD_TAKE_SCREENSHOTS_ONLY_ON_FAIL) ? 
+                Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_TAKE_SCREENSHOTS_ONLY_ON_FAIL)) : DEFAULT_TAKE_SCREENSHOTS_ONLY_ON_FAIL;
     }
     
     public boolean shouldRecordVideo() {
