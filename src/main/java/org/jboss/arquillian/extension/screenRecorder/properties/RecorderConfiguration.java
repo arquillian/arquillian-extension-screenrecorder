@@ -42,8 +42,8 @@ public class RecorderConfiguration {
     }
 
     public File getRootFolder() {
-        return new File(isPropertyExists(SystemProperties.MEDIA_ROOT) ?
-                properties.get(SystemProperties.MEDIA_ROOT) : DEFAULT_ROOT_FOLDER);
+        return new File(isPropertyExists(SystemProperties.ROOT_FOLDER) ?
+                properties.get(SystemProperties.ROOT_FOLDER) : DEFAULT_ROOT_FOLDER);
     }
 
     public String getVideoName() {
