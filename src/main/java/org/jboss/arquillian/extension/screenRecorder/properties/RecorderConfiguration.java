@@ -76,6 +76,9 @@ public class RecorderConfiguration {
         if (name == null) {
             throw new IllegalArgumentException("name");
         }
+        if (properties == null) {
+            return defaultValue;
+        }
         String found = properties.get(name);
         if (found == null || found.isEmpty()) {
             return defaultValue;
