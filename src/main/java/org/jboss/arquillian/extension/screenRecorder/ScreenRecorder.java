@@ -15,6 +15,8 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,6 +24,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ScreenRecorder {
 
+    private static final Logger logger = LoggerFactory.getLogger(ScreenRecorder.class);
+    
     private final int FRAME_RATE;
     private Dimension screenBounds;
     private IMediaWriter writer;
@@ -50,8 +54,8 @@ public class ScreenRecorder {
                             TimeUnit.NANOSECONDS);
                     try {
                         Thread.sleep((long) (1000 / FRAME_RATE));
-                    } catch (InterruptedException e) {
-                        // ignore
+                    } catch (InterruptedException ex) {
+                        logger.error("Exception occured during video recording", ex);
                     }
                     if (!running) {
                         writer.close();
@@ -85,7 +89,7 @@ public class ScreenRecorder {
             Rectangle captureSize = new Rectangle(screenBounds);
             return robot.createScreenCapture(captureSize);
         } catch (AWTException e) {
-
+            logger.error("Exception occured while taking screenshot for video record", e);
             return null;
         }
     }
