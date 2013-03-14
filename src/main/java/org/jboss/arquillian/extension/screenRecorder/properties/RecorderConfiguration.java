@@ -19,85 +19,69 @@ public class RecorderConfiguration {
     private static final String DEFAULT_VIDEO_FOLDER = "video";
     private static final String DEFAULT_SCREENSHOT_FOLDER = "screenshot";
     private static final String DEFAULT_VIDEO_NAME = "record";
-    private static final ImageType DEFAULT_IMAGE_FILE_TYPE = ImageType.PNG;
+    private static final String DEFAULT_IMAGE_FILE_TYPE = ImageType.PNG.name();
     private static final String DEFAULT_VIDEO_FILE_TYPE = "mp4";
-    private static final boolean DEFAULT_SCREENSHOTS_ENABLED = true;
-    private static final boolean DEFAULT_VIDEO_ENABLED = true;
-    private static final RecordingType DEFAULT_RECORDING_TYPE = RecordingType.FAILURE;
-    private static final int DEFAULT_FRAME_RATE = 20;
-    private static final int DEFAULT_TEST_TIMEOUT = 3600; //one hour
-    
+    private static final String DEFAULT_FRAME_RATE = "20";
+    private static final String DEFAULT_TEST_TIMEOUT = "3600"; //one hour
+    private static final String DEFAULT_VIDEO = RecordingType.FAILURE.name();
+    private static final String DEFAULT_SCREENSHOT = RecordingType.FAILURE.name();
+
     private Map<String, String> properties;
 
     public File getVideoFolder() {
-        String folder = isPropertyExists(SystemProperties.VIDEO_FOLDER) ?
-                properties.get(SystemProperties.VIDEO_FOLDER) : DEFAULT_VIDEO_FOLDER;
-        return FileUtils.getFile(getRootFolder(), folder);
+        return FileUtils.getFile(getRootFolder(), getProperty(SystemProperties.VIDEO_FOLDER, DEFAULT_VIDEO_FOLDER));
     }
 
     public File getScreenshotFolder() {
-        String folder = isPropertyExists(SystemProperties.SCREENSHOT_FOLDER) ?
-                properties.get(SystemProperties.SCREENSHOT_FOLDER) : DEFAULT_SCREENSHOT_FOLDER;
-        return FileUtils.getFile(getRootFolder(), folder);
+        return FileUtils.getFile(getRootFolder(), getProperty(SystemProperties.SCREENSHOT_FOLDER, DEFAULT_SCREENSHOT_FOLDER));
     }
 
     public File getRootFolder() {
-        return new File(isPropertyExists(SystemProperties.ROOT_FOLDER) ?
-                properties.get(SystemProperties.ROOT_FOLDER) : DEFAULT_ROOT_FOLDER);
+        return new File(getProperty(SystemProperties.ROOT_FOLDER, DEFAULT_ROOT_FOLDER));
     }
 
     public String getVideoName() {
-        return isPropertyExists(SystemProperties.VIDEO_NAME) ?
-                properties.get(SystemProperties.VIDEO_NAME) : DEFAULT_VIDEO_NAME;
+        return getProperty(SystemProperties.VIDEO_NAME, DEFAULT_VIDEO_NAME);
     }
 
     public ImageType getImageFileType() {
-        return isPropertyExists(SystemProperties.IMAGE_FILE_TYPE) ?
-                ImageType.valueOf(properties.get(SystemProperties.IMAGE_FILE_TYPE)) : DEFAULT_IMAGE_FILE_TYPE;
-    }
-
-    public boolean isScreenshotEnabled() {
-        return isPropertyExists(SystemProperties.SCREENSHOTS_ENABLED) ?
-                Boolean.parseBoolean(properties.get(SystemProperties.SCREENSHOTS_ENABLED)) : DEFAULT_SCREENSHOTS_ENABLED;
-    }
-    
-    public boolean isVideoEnabled() {
-        return isPropertyExists(SystemProperties.VIDEO_ENABLED) ?
-                Boolean.parseBoolean(properties.get(SystemProperties.VIDEO_ENABLED)) : DEFAULT_VIDEO_ENABLED;
-    }
-    
-    public RecordingType getRecordingType() {
-        return isPropertyExists(SystemProperties.RECORDING_TYPE) ?
-                RecordingType.valueOf(properties.get(SystemProperties.RECORDING_TYPE)) : DEFAULT_RECORDING_TYPE;
+        return ImageType.valueOf(getProperty(SystemProperties.IMAGE_FILE_TYPE, DEFAULT_IMAGE_FILE_TYPE).toUpperCase());
     }
 
     public int getFrameRate() {
-        return isPropertyExists(SystemProperties.FRAME_RATE) ?
-                Integer.parseInt(properties.get(SystemProperties.FRAME_RATE)) : DEFAULT_FRAME_RATE;
+        return Integer.parseInt(getProperty(SystemProperties.FRAME_RATE, DEFAULT_FRAME_RATE));
     }
 
-    public int getTestTimeout() {
-        return isPropertyExists(SystemProperties.TEST_TIMEOUT) ?
-                Integer.parseInt(properties.get(SystemProperties.TEST_TIMEOUT)) : DEFAULT_TEST_TIMEOUT;
+    public long getTestTimeout() {
+        return Long.parseLong(getProperty(SystemProperties.TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT));
+    }
+
+    public RecordingType getVideoRecordingType() {
+        return RecordingType.valueOf(getProperty(SystemProperties.VIDEO, DEFAULT_VIDEO).toUpperCase());
+    }
+
+    public RecordingType getScreenshotRecordingType() {
+        return RecordingType.valueOf(getProperty(SystemProperties.SCREENSHOT, DEFAULT_SCREENSHOT).toUpperCase());
     }
 
     public String getVideoFileType() {
         return DEFAULT_VIDEO_FILE_TYPE;
     }
 
-    private boolean isPropertyExists(String property) {
-        if(properties == null) {
-            return false;
-        } else if(properties.get(property) == null || properties.get(property).isEmpty()) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
 
+    protected String getProperty(String name, String defaultValue) {
+        if (name == null) {
+            throw new IllegalArgumentException("name");
+        }
+        String found = properties.get(name);
+        if (found == null || found.isEmpty()) {
+            return defaultValue;
+        } else {
+            return found;
+        }
+    }
 
 }

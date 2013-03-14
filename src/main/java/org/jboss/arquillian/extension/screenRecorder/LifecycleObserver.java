@@ -4,26 +4,19 @@
  */
 package org.jboss.arquillian.extension.screenRecorder;
 
-import org.jboss.arquillian.extension.screenRecorder.properties.SystemProperties;
-import org.jboss.arquillian.extension.screenRecorder.properties.RecorderConfiguration;
-import org.jboss.arquillian.extension.screenRecorder.properties.RecordingType;
 import java.awt.AWTException;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.Method;
 import java.util.Timer;
 import java.util.TimerTask;
-
+import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
-
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ExtensionDef;
 import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
@@ -31,8 +24,11 @@ import org.jboss.arquillian.container.spi.event.container.AfterUnDeploy;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
-import org.jboss.arquillian.test.spi.TestResult;
+import org.jboss.arquillian.extension.screenRecorder.properties.RecorderConfiguration;
+import org.jboss.arquillian.extension.screenRecorder.properties.RecordingType;
+import org.jboss.arquillian.extension.screenRecorder.properties.SystemProperties;
 import org.jboss.arquillian.test.spi.TestClass;
+import org.jboss.arquillian.test.spi.TestResult;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.slf4j.Logger;
@@ -44,19 +40,16 @@ import org.slf4j.LoggerFactory;
  */
 public class LifecycleObserver {
 
-    private static final Logger logger = LoggerFactory.getLogger(LifecycleObserver.class);
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(LifecycleObserver.class);
+
     @Inject
     Instance<TestResult> testResult;
-    
+
     private RecorderConfiguration configuration;
     private ScreenRecorder recorder;
-    
     private Timer timer;
-    
-    private boolean screenshotsEnabled;
-    private boolean videoEnabled;
-    private RecordingType recordingType;
+
+    private File screenshotBefore;
 
     public void initConfiguration(@Observes ArquillianDescriptor descriptor) throws IOException {
         configuration = new RecorderConfiguration();
@@ -65,154 +58,135 @@ public class LifecycleObserver {
                 configuration.setProperties(extension.getExtensionProperties());
             }
         }
-        videoEnabled = configuration.isVideoEnabled();
-        screenshotsEnabled = configuration.isScreenshotEnabled();
-        recordingType = configuration.getRecordingType();
-
         FileUtils.deleteDirectory(configuration.getRootFolder());
 
-        if (videoEnabled) {
+        if (!configuration.getVideoRecordingType().equals(RecordingType.NONE)) {
             configuration.getVideoFolder().mkdirs();
         }
-        if (screenshotsEnabled) {
+        if (!configuration.getScreenshotRecordingType().equals(RecordingType.NONE)) {
             configuration.getScreenshotFolder().mkdirs();
         }
     }
 
     public void executeBeforeStart(@Observes AfterDeploy event) {
-        if (videoEnabled && configuration.getRecordingType() == RecordingType.SUITE) {
+        if (configuration.getVideoRecordingType().equals(RecordingType.SUITE)) {
             startRecording(configuration.getVideoFolder(), configuration.getVideoName());
         }
     }
 
-    public void executeBeforeStop(@Observes AfterUnDeploy event) throws FileNotFoundException {
-        if (videoEnabled && configuration.getRecordingType() == RecordingType.SUITE) {
-            recorder.stopRecording();
+    public void executeBeforeStop(@Observes AfterUnDeploy event) {
+        if (configuration.getVideoRecordingType().equals(RecordingType.SUITE)) {
+            stopRecording(configuration.getVideoFolder(), configuration.getVideoName());
         }
-        deleteEmptyFolders(configuration.getRootFolder().getAbsolutePath());
     }
 
     public void executeBeforeTest(@Observes final Before event) throws AWTException, IOException {
-        String methodName = event.getTestMethod().getName();
-        timer = new Timer();
-        timer.schedule(new TestTimeoutTask(methodName), 1000 * configuration.getTestTimeout());
-        if (recordingType == RecordingType.FAILURE || recordingType == RecordingType.TEST) {
-            File testClassDirectory = prepareDirectory(configuration.getVideoFolder(), event.getTestClass(), true);
-            startRecording(testClassDirectory, methodName);
+        if (configuration.getVideoRecordingType().equals(RecordingType.TEST) || configuration.getVideoRecordingType().equals(RecordingType.FAILURE)) {
+            timer = new Timer();
+            timer.schedule(new TestTimeoutTask(event.getTestClass(), event.getTestMethod()), TimeUnit.SECONDS.toMillis(configuration.getTestTimeout()));
+            File testClassDirectory = getDirectory(configuration.getVideoFolder(), event.getTestClass());
+            startRecording(testClassDirectory, event.getTestMethod().getName());
         }
-        if (screenshotsEnabled && (recordingType == RecordingType.SUITE || recordingType == RecordingType.TEST)) {
-            takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "before");
+        if (configuration.getScreenshotRecordingType().equals(RecordingType.TEST) || configuration.getScreenshotRecordingType().equals(RecordingType.FAILURE)) {
+            screenshotBefore = takeScreenshot();
         }
     }
 
     public void executeAfterTest(@Observes After event) throws AWTException, IOException {
-        timer.cancel();
-        if (videoEnabled && recordingType != RecordingType.SUITE) {
-            recorder.stopRecording();
-            if (testResult.get().getStatus() != TestResult.Status.FAILED && recordingType == RecordingType.FAILURE) {
-                recorder.stopRecording();
-                File videoToDelete = FileUtils.getFile(prepareDirectory(configuration.getVideoFolder(), event.getTestClass(), false),
-                        event.getTestMethod().getName() + "." + configuration.getVideoFileType());
-                if (!videoToDelete.delete()) {
-                    logger.warn("Temporary video file with name {} failed to delete", videoToDelete.getAbsolutePath());
+        switch(configuration.getVideoRecordingType()) {
+            case FAILURE:
+                if (!testResult.get().getStatus().equals(TestResult.Status.FAILED)) {
+                    recorder.stopRecording(null);
+                    break;
                 }
-            }
+            case TEST:
+                if (testResult.get().getStatus().equals(TestResult.Status.SKIPPED)) {
+                    recorder.stopRecording(null);
+                    break;
+                }
+                File testClassDirectory = getDirectory(configuration.getVideoFolder(), event.getTestClass());
+                stopRecording(testClassDirectory, event.getTestMethod().getName() + "_" + testResult.get().getStatus().name().toLowerCase());
+                break;
         }
-        if (screenshotsEnabled) {
-            if (testResult.get().getStatus() == TestResult.Status.FAILED && recordingType == RecordingType.FAILURE) {
-                takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "fail");
-            } else if (recordingType != RecordingType.FAILURE) {
-                takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "after");
-            }
+        switch(configuration.getScreenshotRecordingType()) {
+            case FAILURE:
+                if (!testResult.get().getStatus().equals(TestResult.Status.FAILED)) {
+                    screenshotBefore.delete();
+                    break;
+                }
+            case TEST:
+                if (testResult.get().getStatus().equals(TestResult.Status.SKIPPED)) {
+                    screenshotBefore.delete();
+                    break;
+                }
+                takeScreenshot(screenshotBefore, event.getTestClass(), event.getTestMethod(), testResult.get().getStatus().name().toLowerCase());
         }
     }
 
-    private File prepareDirectory(File root, TestClass clazz, boolean create) {
+    protected File getDirectory(File root, TestClass clazz) {
         String packageName = clazz.getJavaClass().getPackage().getName();
         String className = clazz.getJavaClass().getSimpleName();
         File directory = FileUtils.getFile(root, packageName, className);
-        if (create) {
-            directory.mkdirs();
-        }
         return directory;
     }
 
     private void startRecording(File directory, String fileName) {
-        String videoName = fileName + "." + configuration.getVideoFileType();
-        File video = FileUtils.getFile(directory, videoName);
-        recorder = new ScreenRecorder(video, configuration.getFrameRate());
+        recorder = new ScreenRecorder(configuration.getFrameRate(), configuration.getVideoFileType());
         recorder.startRecording();
     }
 
-    private void takeScreenshot(TestClass testClass, String methodName, String appender) throws AWTException, IOException {
+    private synchronized void stopRecording(File directory, String fileName) {
+        directory.mkdirs();
+        String videoName = fileName + "." + configuration.getVideoFileType();
+        File video = FileUtils.getFile(directory, videoName);
+        recorder.stopRecording(video);
+        timer.cancel();
+    }
+
+    /**
+     * Moves already taken screenshot and uses it as a 'before' one. Then
+     * takes another screenshot.
+     */
+    private void takeScreenshot(File before, TestClass testClass, Method testMethod, String appender) throws AWTException, IOException {
+        File testClassDirectory = getDirectory(configuration.getScreenshotFolder(), testClass);
+        testClassDirectory.mkdirs();
+
+        FileUtils.moveFile(before, FileUtils.getFile(testClassDirectory, testMethod.getName() + "_before." + configuration.getImageFileType()));
+
         Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
         BufferedImage image = new Robot().createScreenCapture(screenSize);
+        String imageName = testMethod.getName() + "_" + appender + "." + configuration.getImageFileType();
 
-        String imageName = methodName + "_" + appender + "." + configuration.getImageFileType();
-        File testClassDirectory = prepareDirectory(configuration.getScreenshotFolder(), testClass, true);
         File outputFile = FileUtils.getFile(testClassDirectory, imageName);
         ImageIO.write(image, configuration.getImageFileType().toString(), outputFile);
     }
 
-    private void deleteEmptyFolders(String folderName) {
-        File aStartingDir = new File(folderName);
-        List<File> emptyFolders = new ArrayList<File>();
-        findEmptyFoldersInDir(aStartingDir, emptyFolders);
-        List<String> fileNames = new ArrayList<String>();
-        for (File f : emptyFolders) {
-            String s = f.getAbsolutePath();
-            fileNames.add(s);
-        }
-        for (File f : emptyFolders) {
-            if(f.delete()) {
-                logger.info("Deleted folder {} during cleanup", f.getAbsolutePath());
-            }
-        }
-    }
-
-    private boolean findEmptyFoldersInDir(File folder, List<File> emptyFolders) {
-        boolean isEmpty = false;
-        File[] filesAndDirs = folder.listFiles();
-        List<File> filesDirs = Arrays.asList(filesAndDirs);
-        if (filesDirs.isEmpty()) {
-            isEmpty = true;
-        }
-        if (filesDirs.size() > 0) {
-            boolean allDirsEmpty = true;
-            boolean noFiles = true;
-            for (File file : filesDirs) {
-                if (!file.isFile()) {
-                    boolean isEmptyChild = findEmptyFoldersInDir(file, emptyFolders);
-                    if (!isEmptyChild) {
-                        allDirsEmpty = false;
-                    }
-                }
-                if (file.isFile()) {
-                    noFiles = false;
-                }
-            }
-            if (noFiles == true && allDirsEmpty == true) {
-                isEmpty = true;
-            }
-        }
-        if (isEmpty) {
-            emptyFolders.add(folder);
-        }
-        return isEmpty;
+    /**
+     * Takes screenshot and saves it into a temporary file.
+     */
+    private File takeScreenshot() throws AWTException, IOException {
+        Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        BufferedImage image = new Robot().createScreenCapture(screenSize);
+        File temp = File.createTempFile("arquillian-screen-recorder", "." + configuration.getImageFileType());
+        temp.deleteOnExit();
+        ImageIO.write(image, configuration.getImageFileType().toString(), temp);
+        return temp;
     }
 
     private class TestTimeoutTask extends TimerTask {
 
-        private String testMethodName;
+        private final TestClass testClass;
+        private final Method method;
 
-        public TestTimeoutTask(String testMethodName) {
-            this.testMethodName = testMethodName;
+        public TestTimeoutTask(TestClass testClass, Method method) {
+            this.testClass = testClass;
+            this.method = method;
         }
 
         @Override
         public void run() {
-            recorder.stopRecording();
-            logger.error("Test method {} has reached its timeout, stopping video recording", testMethodName);
+            stopRecording(getDirectory(configuration.getVideoFolder(), testClass), method.getName() + "_timeout");
+            LOGGER.error("Test method {} in class {} has reached its timeout, stopping video recording", method.getName(), testClass.getName());
         }
     }
 }
