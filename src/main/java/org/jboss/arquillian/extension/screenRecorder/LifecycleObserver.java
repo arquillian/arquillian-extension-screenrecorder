@@ -4,13 +4,20 @@
  */
 package org.jboss.arquillian.extension.screenRecorder;
 
+import org.jboss.arquillian.extension.screenRecorder.properties.SystemProperties;
+import org.jboss.arquillian.extension.screenRecorder.properties.RecorderConfiguration;
+import org.jboss.arquillian.extension.screenRecorder.properties.RecordingType;
 import java.awt.AWTException;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -47,10 +54,9 @@ public class LifecycleObserver {
     
     private Timer timer;
     
-    private boolean recordEachTestSeparately;
-    private boolean shouldTakeScreenshots;
-    private boolean shouldRecordVideo;
-    private boolean shouldTakeScreenshotsOnlyOnFail;
+    private boolean screenshotsEnabled;
+    private boolean videoEnabled;
+    private RecordingType recordingType;
 
     public void initConfiguration(@Observes ArquillianDescriptor descriptor) throws IOException {
         configuration = new RecorderConfiguration();
@@ -59,65 +65,75 @@ public class LifecycleObserver {
                 configuration.setProperties(extension.getExtensionProperties());
             }
         }
-        recordEachTestSeparately = configuration.isEachTestRecordedSeparately();
-        shouldRecordVideo = configuration.shouldRecordVideo();
-        shouldTakeScreenshots = configuration.shouldTakeScreenshots();
-        shouldTakeScreenshotsOnlyOnFail = configuration.shouldTakeScreenshotsOnlyOnFail();
+        videoEnabled = configuration.isVideoEnabled();
+        screenshotsEnabled = configuration.isScreenshotEnabled();
+        recordingType = configuration.getRecordingType();
 
         FileUtils.deleteDirectory(configuration.getRootFolder());
 
-        if (shouldRecordVideo) {
+        if (videoEnabled) {
             configuration.getVideoFolder().mkdirs();
         }
-        if (shouldTakeScreenshots || shouldTakeScreenshotsOnlyOnFail) {
+        if (screenshotsEnabled) {
             configuration.getScreenshotFolder().mkdirs();
         }
     }
 
     public void executeBeforeStart(@Observes AfterDeploy event) {
-        if (!recordEachTestSeparately && shouldRecordVideo) {
+        if (videoEnabled && configuration.getRecordingType() == RecordingType.SUITE) {
             startRecording(configuration.getVideoFolder(), configuration.getVideoName());
         }
     }
 
-    public void executeBeforeStop(@Observes AfterUnDeploy event) {
-        if (!recordEachTestSeparately && shouldRecordVideo) {
+    public void executeBeforeStop(@Observes AfterUnDeploy event) throws FileNotFoundException {
+        if (videoEnabled && configuration.getRecordingType() == RecordingType.SUITE) {
             recorder.stopRecording();
         }
+        deleteEmptyFolders(configuration.getRootFolder().getAbsolutePath());
     }
 
     public void executeBeforeTest(@Observes final Before event) throws AWTException, IOException {
         String methodName = event.getTestMethod().getName();
         timer = new Timer();
         timer.schedule(new TestTimeoutTask(methodName), 1000 * configuration.getTestTimeout());
-        if (recordEachTestSeparately) {
-            File testClassDirectory = prepareDirectory(configuration.getVideoFolder(), event.getTestClass());
+        if (recordingType == RecordingType.FAILURE || recordingType == RecordingType.TEST) {
+            File testClassDirectory = prepareDirectory(configuration.getVideoFolder(), event.getTestClass(), true);
             startRecording(testClassDirectory, methodName);
         }
-        if (shouldTakeScreenshots && !shouldTakeScreenshotsOnlyOnFail) {
-            takeScreenshot(event.getTestClass(), methodName, "before");
+        if (screenshotsEnabled && (recordingType == RecordingType.SUITE || recordingType == RecordingType.TEST)) {
+            takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "before");
         }
     }
 
     public void executeAfterTest(@Observes After event) throws AWTException, IOException {
         timer.cancel();
-        if (recordEachTestSeparately) {
+        if (videoEnabled && recordingType != RecordingType.SUITE) {
             recorder.stopRecording();
+            if (testResult.get().getStatus() != TestResult.Status.FAILED && recordingType == RecordingType.FAILURE) {
+                recorder.stopRecording();
+                File videoToDelete = FileUtils.getFile(prepareDirectory(configuration.getVideoFolder(), event.getTestClass(), false),
+                        event.getTestMethod().getName() + "." + configuration.getVideoFileType());
+                if (!videoToDelete.delete()) {
+                    logger.warn("Temporary video file with name {} failed to delete", videoToDelete.getAbsolutePath());
+                }
+            }
         }
-        if (shouldTakeScreenshots) {
-            takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "after");
-        } else if (shouldTakeScreenshotsOnlyOnFail) {
-            if (testResult.get().getStatus() == TestResult.Status.FAILED) {
+        if (screenshotsEnabled) {
+            if (testResult.get().getStatus() == TestResult.Status.FAILED && recordingType == RecordingType.FAILURE) {
                 takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "fail");
+            } else if (recordingType != RecordingType.FAILURE) {
+                takeScreenshot(event.getTestClass(), event.getTestMethod().getName(), "after");
             }
         }
     }
 
-    protected File prepareDirectory(File root, TestClass clazz) {
+    private File prepareDirectory(File root, TestClass clazz, boolean create) {
         String packageName = clazz.getJavaClass().getPackage().getName();
         String className = clazz.getJavaClass().getSimpleName();
         File directory = FileUtils.getFile(root, packageName, className);
-        directory.mkdirs();
+        if (create) {
+            directory.mkdirs();
+        }
         return directory;
     }
 
@@ -133,9 +149,56 @@ public class LifecycleObserver {
         BufferedImage image = new Robot().createScreenCapture(screenSize);
 
         String imageName = methodName + "_" + appender + "." + configuration.getImageFileType();
-        File testClassDirectory = prepareDirectory(configuration.getScreenshotFolder(), testClass);
+        File testClassDirectory = prepareDirectory(configuration.getScreenshotFolder(), testClass, true);
         File outputFile = FileUtils.getFile(testClassDirectory, imageName);
         ImageIO.write(image, configuration.getImageFileType().toString(), outputFile);
+    }
+
+    private void deleteEmptyFolders(String folderName) {
+        File aStartingDir = new File(folderName);
+        List<File> emptyFolders = new ArrayList<File>();
+        findEmptyFoldersInDir(aStartingDir, emptyFolders);
+        List<String> fileNames = new ArrayList<String>();
+        for (File f : emptyFolders) {
+            String s = f.getAbsolutePath();
+            fileNames.add(s);
+        }
+        for (File f : emptyFolders) {
+            if(f.delete()) {
+                logger.info("Deleted folder {} during cleanup", f.getAbsolutePath());
+            }
+        }
+    }
+
+    private boolean findEmptyFoldersInDir(File folder, List<File> emptyFolders) {
+        boolean isEmpty = false;
+        File[] filesAndDirs = folder.listFiles();
+        List<File> filesDirs = Arrays.asList(filesAndDirs);
+        if (filesDirs.isEmpty()) {
+            isEmpty = true;
+        }
+        if (filesDirs.size() > 0) {
+            boolean allDirsEmpty = true;
+            boolean noFiles = true;
+            for (File file : filesDirs) {
+                if (!file.isFile()) {
+                    boolean isEmptyChild = findEmptyFoldersInDir(file, emptyFolders);
+                    if (!isEmptyChild) {
+                        allDirsEmpty = false;
+                    }
+                }
+                if (file.isFile()) {
+                    noFiles = false;
+                }
+            }
+            if (noFiles == true && allDirsEmpty == true) {
+                isEmpty = true;
+            }
+        }
+        if (isEmpty) {
+            emptyFolders.add(folder);
+        }
+        return isEmpty;
     }
 
     private class TestTimeoutTask extends TimerTask {

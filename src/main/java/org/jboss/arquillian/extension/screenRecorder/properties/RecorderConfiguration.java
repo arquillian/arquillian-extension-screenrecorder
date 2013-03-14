@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jboss.arquillian.extension.screenRecorder;
+package org.jboss.arquillian.extension.screenRecorder.properties;
 
 import java.io.File;
 import java.util.Map;
@@ -21,10 +21,9 @@ public class RecorderConfiguration {
     private static final String DEFAULT_VIDEO_NAME = "record";
     private static final ImageType DEFAULT_IMAGE_FILE_TYPE = ImageType.PNG;
     private static final String DEFAULT_VIDEO_FILE_TYPE = "mp4";
-    private static final boolean DEFAULT_RECORD_TESTS_SEPARATELY = false;
-    private static final boolean DEFAULT_SHOULD_TAKE_SCREENSHOTS = false;
-    private static final boolean DEFAULT_SHOULD_RECORD_VIDEO = true;
-    private static final boolean DEFAULT_TAKE_SCREENSHOTS_ONLY_ON_FAIL = true;
+    private static final boolean DEFAULT_SCREENSHOTS_ENABLED = true;
+    private static final boolean DEFAULT_VIDEO_ENABLED = true;
+    private static final RecordingType DEFAULT_RECORDING_TYPE = RecordingType.FAILURE;
     private static final int DEFAULT_FRAME_RATE = 20;
     private static final int DEFAULT_TEST_TIMEOUT = 3600; //one hour
     
@@ -57,24 +56,19 @@ public class RecorderConfiguration {
                 ImageType.valueOf(properties.get(SystemProperties.IMAGE_FILE_TYPE)) : DEFAULT_IMAGE_FILE_TYPE;
     }
 
-    public boolean isEachTestRecordedSeparately() {
-        return isPropertyExists(SystemProperties.RECORD_TESTS_SEPARATELY) ?
-                Boolean.parseBoolean(properties.get(SystemProperties.RECORD_TESTS_SEPARATELY)) : DEFAULT_RECORD_TESTS_SEPARATELY;
-    }
-
-    public boolean shouldTakeScreenshots() {
-        return isPropertyExists(SystemProperties.SHOULD_TAKE_SCREENSHOTS) ?
-                Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_TAKE_SCREENSHOTS)) : DEFAULT_SHOULD_TAKE_SCREENSHOTS;
+    public boolean isScreenshotEnabled() {
+        return isPropertyExists(SystemProperties.SCREENSHOTS_ENABLED) ?
+                Boolean.parseBoolean(properties.get(SystemProperties.SCREENSHOTS_ENABLED)) : DEFAULT_SCREENSHOTS_ENABLED;
     }
     
-    public boolean shouldTakeScreenshotsOnlyOnFail() {
-        return isPropertyExists(SystemProperties.SHOULD_TAKE_SCREENSHOTS_ONLY_ON_FAIL) ? 
-                Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_TAKE_SCREENSHOTS_ONLY_ON_FAIL)) : DEFAULT_TAKE_SCREENSHOTS_ONLY_ON_FAIL;
+    public boolean isVideoEnabled() {
+        return isPropertyExists(SystemProperties.VIDEO_ENABLED) ?
+                Boolean.parseBoolean(properties.get(SystemProperties.VIDEO_ENABLED)) : DEFAULT_VIDEO_ENABLED;
     }
     
-    public boolean shouldRecordVideo() {
-        return isPropertyExists(SystemProperties.SHOULD_RECORD_VIDEO) ?
-                Boolean.parseBoolean(properties.get(SystemProperties.SHOULD_RECORD_VIDEO)) : DEFAULT_SHOULD_RECORD_VIDEO;
+    public RecordingType getRecordingType() {
+        return isPropertyExists(SystemProperties.RECORDING_TYPE) ?
+                RecordingType.valueOf(properties.get(SystemProperties.RECORDING_TYPE)) : DEFAULT_RECORDING_TYPE;
     }
 
     public int getFrameRate() {
