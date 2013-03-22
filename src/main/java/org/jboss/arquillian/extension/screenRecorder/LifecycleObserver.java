@@ -62,6 +62,8 @@ public class LifecycleObserver {
 
         if (!configuration.getVideoRecordingType().equals(RecordingType.NONE)) {
             configuration.getVideoFolder().mkdirs();
+            timer = new Timer();
+            timer.schedule(new TestTimeoutTask(), TimeUnit.SECONDS.toMillis(configuration.getTestTimeout()));
         }
         if (!configuration.getScreenshotRecordingType().equals(RecordingType.NONE)) {
             configuration.getScreenshotFolder().mkdirs();
@@ -86,6 +88,9 @@ public class LifecycleObserver {
             timer.schedule(new TestTimeoutTask(event.getTestClass(), event.getTestMethod()), TimeUnit.SECONDS.toMillis(configuration.getTestTimeout()));
             File testClassDirectory = getDirectory(configuration.getVideoFolder(), event.getTestClass());
             startRecording(testClassDirectory, event.getTestMethod().getName());
+        } else {
+            timer = new Timer();
+            timer.schedule(new TestTimeoutTask(), TimeUnit.SECONDS.toMillis(configuration.getTestTimeout()));
         }
         if (configuration.getScreenshotRecordingType().equals(RecordingType.TEST) || configuration.getScreenshotRecordingType().equals(RecordingType.FAILURE)) {
             screenshotBefore = takeScreenshot();
@@ -140,7 +145,9 @@ public class LifecycleObserver {
         String videoName = fileName + "." + configuration.getVideoFileType();
         File video = FileUtils.getFile(directory, videoName);
         recorder.stopRecording(video);
-        timer.cancel();
+        if (timer != null) {
+            timer.cancel();
+        }
     }
 
     /**
@@ -178,6 +185,11 @@ public class LifecycleObserver {
         private final TestClass testClass;
         private final Method method;
 
+        public TestTimeoutTask() {
+            this.testClass = null;
+            this.method = null;
+        }
+
         public TestTimeoutTask(TestClass testClass, Method method) {
             this.testClass = testClass;
             this.method = method;
@@ -185,8 +197,13 @@ public class LifecycleObserver {
 
         @Override
         public void run() {
-            stopRecording(getDirectory(configuration.getVideoFolder(), testClass), method.getName() + "_timeout");
-            LOGGER.error("Test method {} in class {} has reached its timeout, stopping video recording", method.getName(), testClass.getName());
+            if (testClass != null && method != null) {
+                stopRecording(getDirectory(configuration.getVideoFolder(), testClass), method.getName() + "_timeout");
+                LOGGER.error("Test method {} in class {} has reached its timeout, stopping video recording", method.getName(), testClass.getName());
+            } else {
+                stopRecording(configuration.getVideoFolder(), configuration.getVideoName());
+                LOGGER.error("The last test method reached its timeout, stopping video recording.");
+            }
         }
     }
 }
