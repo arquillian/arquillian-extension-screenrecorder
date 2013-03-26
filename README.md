@@ -33,9 +33,9 @@ There are various settings which can be used to alter Screen Recorder behaviour.
 * **videoName** - this will be video name (in case you are recording one video for all tests), defaults to record
 * **imageFileType** - filetype of produced screenshots, allowed types are PNG, JPG and GIF. Default is PNG
 * **video** - enum value which tells Screen Recorder when to save screenshots and videos
-	* **suite** - takes one video for all tests and screenshots before and after each test
-	* **test** - takes one video for every test and screenshots before and after each test
-	* **failure** - take video or screenshots only if test fails (default option)
+	* **suite** - takes one video for all tests
+	* **test** - takes one video for every test
+	* **failure** - take video only if test fails (default option)
 	* **none** - turns video recording off
 * **screenshot** - enum value which tells Screen Recorder when to save screenshots and videos
 	* **test** - takes screenshots before and after each test
@@ -45,7 +45,7 @@ There are various settings which can be used to alter Screen Recorder behaviour.
 * **testTimeout** - you can set default timeout for each test, this timeout will be used to stop the video recording in order to save space on hard drive. Defaults to one hour
 
 
-Also see the class [SystemProperties](https://github.com/qa/arquillian-screen-recorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/SystemProperties.java) which contains a list of properties and the [RecorderConfiguration](https://github.com/qa/arquillian-screen-recorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/RecorderConfiguration.java) which contains their defaults.
+Also see the class [SystemProperties](https://github.com/qa/arquillian-screen-recorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/properties/SystemProperties.java) which contains a list of properties and the [RecorderConfiguration](https://github.com/qa/arquillian-screen-recorder/blob/master/src/main/java/org/jboss/arquillian/extension/screenRecorder/properties/RecorderConfiguration.java) which contains their defaults.
 
 
 Notes
@@ -53,4 +53,4 @@ Notes
 
 Video files are automatically saved in MP4, I will try to provide more formats in the future. Size of the video can be altered via frameRate property. You can also decide if you want to take one video for every test (so this video is named after the test method) or take one video of whole testsuite (this is the default). Screenshots can be taken before and after each test or after test has been failed. Format for images is PNG, this can be changed to GIF or JPG.
 
-There is a cleanup after the suite which deletes every unused (empty) folder. Screen Recorder also cleans whole root folder before beginning of the suite.
+Screen Recorder also cleans whole root folder before beginning of the suite.
