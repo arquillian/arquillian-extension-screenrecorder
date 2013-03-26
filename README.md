@@ -21,8 +21,8 @@ There are various settings which can be used to alter Screen Recorder behaviour.
         <property name="rootFolder">target</property>
         <property name="videoFolder">video</property>
         <property name="videoName">myTestVideo</property>
-        <property name="enableScreenshots">false</property>
-        <property name="recordingType">test</property>
+        <property name="video">suite</property>
+        <property name="screenshot">test</property>
     </extension>
 
 ### List of settings
