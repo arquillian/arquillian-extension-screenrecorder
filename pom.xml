@@ -1,21 +1,45 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <!-- Parent -->
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>8</version>
+        <version>10</version>
         <relativePath />
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
     <groupId>org.jboss.arquillian.extension</groupId>
     <artifactId>arquillian-screen-recorder</artifactId>
     <packaging>jar</packaging>
 
     <version>1.0.0.Alpha1-SNAPSHOT</version>
-	<name>screenRecorder</name>
+    <name>screenRecorder</name>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, Version 2.1</name>
+            <distribution>repo</distribution>
+            <url>http://www.gnu.org/licenses/lgpl-2.1.txt</url>
+        </license>
+    </licenses>
+    
+    <developers>
+        <developer>
+            <name>Petr Mensik</name>
+            <email>pmensik@redhat.com</email>
+        </developer>
+        <developer>
+            <name>Jan Papousek</name>
+            <email>jpapousek@redhat.com</email>
+        </developer>
+    </developers>
+    
+    <scm>
+        <connection>scm:git:git://github.com/qa/arquillian-screen-recorder.git</connection>
+        <developerConnection>scm:git:git@github.com:qa/arquillian-screen-recorder.git</developerConnection>
+        <url>https://github.com/qa/arquillian-screen-recorder</url>
+    </scm>
 
     <properties>
         <arquillian.version>1.0.3.Final</arquillian.version>
@@ -71,19 +95,20 @@
     </dependencies>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.12.4</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.14</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.4.1</version>
+                <configuration>
+                    <preparationGoals>clean verify -Prelease</preparationGoals>
+                    <goals>clean deploy -Prelease</goals>
+                </configuration>
             </plugin>
         </plugins>
     </build>
