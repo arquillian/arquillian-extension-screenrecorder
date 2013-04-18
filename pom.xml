@@ -102,7 +102,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.14</version>
             </plugin>
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.4.1</version>
@@ -111,7 +111,7 @@
                     <preparationGoals>clean verify</preparationGoals>
                     <goals>clean deploy</goals>
                 </configuration>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
 </project>
