@@ -12,7 +12,7 @@
     <artifactId>arquillian-screen-recorder</artifactId>
     <packaging>jar</packaging>
 
-    <version>1.0.0.Alpha2-SNAPSHOT</version>
+    <version>1.0.0.Alpha1-SNAPSHOT</version>
     <name>screenRecorder</name>
 
     <licenses>
@@ -102,16 +102,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.14</version>
             </plugin>
-<!--            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.4.1</version>
-                <configuration>
-                    <tagBase>file:////home/pmensik/</tagBase>
-                    <preparationGoals>clean verify</preparationGoals>
-                    <goals>clean deploy</goals>
-                </configuration>
-            </plugin>-->
         </plugins>
     </build>
 </project>
