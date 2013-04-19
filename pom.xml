@@ -12,7 +12,7 @@
     <artifactId>arquillian-screen-recorder</artifactId>
     <packaging>jar</packaging>
 
-    <version>1.0.0.Alpha1-SNAPSHOT</version>
+    <version>1.0.0.Alpha1</version>
     <name>screenRecorder</name>
 
     <licenses>
@@ -38,7 +38,7 @@
         <connection>scm:git:git://github.com/qa/arquillian-screen-recorder.git</connection>
         <developerConnection>scm:git:git@github.com:qa/arquillian-screen-recorder.git</developerConnection>
         <url>https://github.com/qa/arquillian-screen-recorder</url>
-      <tag>HEAD</tag>
+      <tag>arquillian-screen-recorder-1.0.0.Alpha1</tag>
   </scm>
 
     <properties>
