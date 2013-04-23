@@ -5,3 +5,8 @@ target/*
 *.jar
 *.war
 *.ear
+
+# eclipe related
+.classpath
+.project
+.settings/*
