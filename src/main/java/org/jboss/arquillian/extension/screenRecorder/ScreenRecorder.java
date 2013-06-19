@@ -93,6 +93,9 @@ public class ScreenRecorder {
                         writer.close();
                         try {
                             if (destination != null) {
+                                if (destination.exists()) {
+                                    destination.delete();
+                                }
                                 FileUtils.moveFile(output, destination);
                             }
                         } catch (IOException e) {

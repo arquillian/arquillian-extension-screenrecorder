@@ -172,13 +172,20 @@ public class LifecycleObserver {
         File testClassDirectory = getDirectory(configuration.getScreenshotFolder(), testClass);
         testClassDirectory.mkdirs();
 
-        FileUtils.moveFile(before, FileUtils.getFile(testClassDirectory, testMethod.getName() + "_before." + configuration.getImageFileType()));
+        File beforeDestination = FileUtils.getFile(testClassDirectory, testMethod.getName() + "_before." + configuration.getImageFileType());
+        if (beforeDestination.exists()) {
+            beforeDestination.delete();
+        }
+        FileUtils.moveFile(before, beforeDestination);
 
         Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
         BufferedImage image = new Robot().createScreenCapture(screenSize);
         String imageName = testMethod.getName() + "_" + appender + "." + configuration.getImageFileType();
 
         File outputFile = FileUtils.getFile(testClassDirectory, imageName);
+        if (outputFile.exists()) {
+            outputFile.delete();
+        }
         ImageIO.write(image, configuration.getImageFileType().toString(), outputFile);
     }
 
